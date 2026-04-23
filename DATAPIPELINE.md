@@ -49,7 +49,8 @@ accept `--config` to point at an alternate file:
 ./build-osm --config config/config-custom.yml --tag 2026-04-23
 ```
 
-Key sections to edit before the first run:
+**Before running the pipeline, edit `config.yml` and set the following paths** — they ship
+as placeholders and the pipeline will fail if left unchanged:
 
 | Section | Key fields | Description |
 |---|---|---|
