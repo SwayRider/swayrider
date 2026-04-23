@@ -43,7 +43,11 @@ pip install -r requirements.txt
 ## Configuration
 
 Config files live in `data-pipeline/config/`. The default is `config/config.yml`; all scripts
-accept `--config` to point at an alternate file.
+accept `--config` to point at an alternate file:
+
+```bash
+./build-osm --config config/config-custom.yml --tag 2026-04-23
+```
 
 Key sections to edit before the first run:
 
@@ -55,6 +59,35 @@ Key sections to edit before the first run:
 
 The pipeline compiles Valhalla and Tippecanoe from source on first run and caches the
 binaries in `tools_dir`. Subsequent runs reuse them.
+
+### Minimal / test builds
+
+A full Europe build takes many hours and ~1.5 TB. To test the pipeline with a smaller
+dataset, copy `config.yml` and delete all but the regions you need:
+
+```bash
+cp config/config.yml config/config-test.yml
+# Edit config-test.yml: remove unwanted entries from the `regions` and `border-regions` sections
+```
+
+Example: keeping only `west-europe` and `iberian-peninsula` reduces the build to two regions
+and their shared border. Delete every other entry under `regions:` and remove all
+`border-regions:` entries that reference other regions (keep only
+`iberian-peninsula_west-europe`).
+
+Then run all scripts with `--config config/config-test.yml`:
+
+```bash
+./build-osm           --config config/config-test.yml --tag test-2026-04-23
+./build-border-data   --config config/config-test.yml --tag test-2026-04-23
+./build-valhalla-data --config config/config-test.yml --tag test-2026-04-23
+./build-pelias-data   --config config/config-test.yml --tag test-2026-04-23
+./build-tiles         --config config/config-test.yml --tag test-2026-04-23
+```
+
+The layer-10 and layer-20 Docker Compose files do not need changes — services for regions
+that have no data simply fail their health checks and stay idle, which is harmless for
+development.
 
 ---
 
