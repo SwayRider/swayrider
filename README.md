@@ -50,10 +50,12 @@ For other distros:
 
 ### Go
 
-Install Go ≥ 1.25.1. The recommended approach is [mise](https://mise.jdx.dev/) or direct from
-<https://go.dev/dl/>:
+Install Go ≥ 1.25.1. The recommended approach is snap or direct from <https://go.dev/dl/>:
 
 ```bash
+# snap (recommended)
+sudo snap install go --classic
+
 # Direct install
 curl -L https://go.dev/dl/go1.25.1.linux-amd64.tar.gz | sudo tar -C /usr/local -xz
 export PATH=$PATH:/usr/local/go/bin  # add to ~/.profile
@@ -230,6 +232,15 @@ POSTGRES_DB=swayriderdb
 Exposed ports: PostgreSQL `35432`, Elasticsearch `39200`, MinIO `39000/39001`,
 Traefik `30080/30443` (HTTP/HTTPS), `38080` (dashboard).
 
+### Database migrations
+
+After layer-00 is up, run the AuthService migrations:
+
+```bash
+cd ~/Dev/swayrider-public/authservice
+make migrate-up
+```
+
 ### Layer 10 — Geospatial engines
 
 Services: **Valhalla** (8 routing regions), **Pelias** (geocoding)
@@ -295,15 +306,6 @@ Exposed ports:
 | routerservice | 34004 | 34104 |
 | searchservice | 34006 | 34106 |
 | tilesservice | 34005 | — |
-
-### Database migrations
-
-After layer-20 starts for the first time, run the AuthService migrations:
-
-```bash
-cd ~/Dev/swayrider-public/authservice
-make migrate-up
-```
 
 ---
 
