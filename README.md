@@ -285,6 +285,9 @@ Pelias API `33111–33181`, Pelias Placeholder `33100`.
 
 ### Layer 20 — SwayRider services
 
+> **Before starting layer-20**, the data pipeline must have run and its output deployed to the
+> server data paths. See [DATAPIPELINE.md](DATAPIPELINE.md) for the full procedure.
+
 Services: authservice, mailservice, regionservice, routerservice, searchservice, tilesservice.
 
 ```bash
