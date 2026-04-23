@@ -234,12 +234,28 @@ Traefik `30080/30443` (HTTP/HTTPS), `38080` (dashboard).
 
 ### Database migrations
 
-After layer-00 is up, run the AuthService migrations:
+After layer-00 is up, run the AuthService migrations. The Makefile loads `authservice/.env`,
+uses `envsubst` to substitute the connection variables into `dbconfig.yml.in` producing
+`dbconfig.yml`, and passes that to `sql-migrate`. Configure `.env` first:
+
+```env
+DB_HOST=<dev-server-ip>
+DB_PORT=35432
+DB_USER=postgresadmin
+DB_PASSWORD=<same as layer-00>
+DB_NAME=authdb
+DB_SSL_MODE=disable
+```
+
+Then run:
 
 ```bash
 cd ~/Dev/swayrider-public/authservice
+cp env.example .env   # if not done yet, then fill in the values above
 make migrate-up
 ```
+
+The `migrate-up` target also creates the `authdb` database automatically if it does not exist.
 
 ### Layer 10 — Geospatial engines
 
