@@ -405,13 +405,6 @@ and how to configure the dev server endpoint.
 
 ---
 
-## API Testing
-
-REST API collections for [Bruno](https://www.usebruno.com/) are included in each service
-repo under `rest/`.
-
----
-
 ## Troubleshooting
 
 **`protoc-gen-go: program not found`**
