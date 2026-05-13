@@ -115,31 +115,11 @@ Replace `SERVICE` and `VERSION` for each service you are releasing.
 
 ### swayrider-api
 
-`swayrider-api` must also be built from the workspace root — its `Dockerfile` copies
-`go.work` and all shared modules (`swlib`, `grpcclients`, `protos`) into the build context so
-they are resolved without hitting the module proxy:
+`swayrider-api` builds like any other service — from its own directory using `go mod download`:
 
 ```bash
-cd ~/Dev/swayrider-public
-
-VERSION=0.1.0
-
-docker buildx build \
-  -f swayrider-api/Dockerfile \
-  --platform linux/amd64,linux/arm64 \
-  -t ghcr.io/swayrider/swayrider-api:v$VERSION \
-  -t ghcr.io/swayrider/swayrider-api:latest \
-  --push .
-```
-
-For the dev stack, use the `dev-latest` tag:
-
-```bash
-docker buildx build \
-  -f swayrider-api/Dockerfile \
-  --platform linux/amd64,linux/arm64 \
-  -t ghcr.io/swayrider/swayrider-api:dev-latest \
-  --push .
+cd ~/Dev/swayrider-public/swayrider-api
+make container-build
 ```
 
 ---
