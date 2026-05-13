@@ -11,6 +11,7 @@ backed by Valhalla (routing), Pelias (geocoding), and PostgreSQL.
 | [SwayRider/protos](https://github.com/SwayRider/protos) | Go / protobuf | gRPC protobuf definitions |
 | [SwayRider/grpcclients](https://github.com/SwayRider/grpcclients) | Go | gRPC client wrappers |
 | [SwayRider/swlib](https://github.com/SwayRider/swlib) | Go | Shared library (app bootstrap, auth, logging) |
+| [SwayRider/swayrider-api](https://github.com/SwayRider/swayrider-api) | Go | API gateway — JWT validation, rate limiting, queue |
 | [SwayRider/authservice](https://github.com/SwayRider/authservice) | Go | User auth & JWT |
 | [SwayRider/mailservice](https://github.com/SwayRider/mailservice) | Go | Transactional email |
 | [SwayRider/regionservice](https://github.com/SwayRider/regionservice) | Go | Geographic region queries |
@@ -112,6 +113,9 @@ git clone git@github.com:SwayRider/protos.git
 git clone git@github.com:SwayRider/grpcclients.git
 git clone git@github.com:SwayRider/swlib.git
 
+# API gateway
+git clone git@github.com:SwayRider/swayrider-api.git
+
 # Backend services (clone whichever you need)
 git clone git@github.com:SwayRider/authservice.git
 git clone git@github.com:SwayRider/mailservice.git
@@ -144,6 +148,7 @@ go work use \
   ./protos \
   ./grpcclients \
   ./swlib \
+  ./swayrider-api \
   ./authservice \
   ./mailservice \
   ./regionservice \
@@ -177,16 +182,17 @@ building any service that imports them.
 ### 2. Build order
 
 ```
-protos      → go build ./...   (no swayrider deps)
-grpcclients → go build ./...   (depends on protos)
-swlib       → go build ./...   (depends on grpcclients + protos)
-services    → go build ./...   (depend on swlib + grpcclients + protos)
-swctl       → go build ./...   (depends on grpcclients + swlib)
+protos        → go build ./...   (no swayrider deps)
+grpcclients   → go build ./...   (depends on protos)
+swlib         → go build ./...   (depends on grpcclients + protos)
+swayrider-api → go build ./...   (depends on swlib + grpcclients)
+services      → go build ./...   (depend on swlib + grpcclients + protos)
+swctl         → go build ./...   (depends on grpcclients + swlib)
 ```
 
 ```bash
-for repo in protos grpcclients swlib authservice mailservice regionservice \
-            routerservice searchservice tilesservice swctl; do
+for repo in protos grpcclients swlib swayrider-api authservice mailservice \
+            regionservice routerservice searchservice tilesservice swctl; do
   echo "--- $repo ---"
   cd ~/Dev/swayrider-public/$repo && go build ./...
 done
@@ -288,7 +294,7 @@ Pelias API `33111–33181`, Pelias Placeholder `33100`.
 > **Before starting layer-20**, the data pipeline must have run and its output deployed to the
 > server data paths. See [DATAPIPELINE.md](DATAPIPELINE.md) for the full procedure.
 
-Services: authservice, mailservice, regionservice, routerservice, searchservice, tilesservice.
+Services: swayrider-api (API gateway), authservice, mailservice, regionservice, routerservice, searchservice, tilesservice.
 
 ```bash
 cd ~/Dev/swayrider-public/infra/dev/layer-20
@@ -319,12 +325,15 @@ Exposed ports:
 
 | Service | HTTP | gRPC |
 |---|---|---|
+| swayrider-api | 34000 | — |
 | authservice | 34001 | 34101 |
 | mailservice | 34002 | 34102 |
 | regionservice | 34003 | 34103 |
 | routerservice | 34004 | 34104 |
 | searchservice | 34006 | 34106 |
 | tilesservice | 34005 | — |
+
+`swayrider-api` is also reachable via Traefik at `api.<DEV_DOMAIN>` (port 30080/30443) — it is the only service attached to the Traefik-facing network.
 
 ---
 
