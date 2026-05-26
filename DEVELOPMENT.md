@@ -252,6 +252,122 @@ Credentials must be registered against the **local** authservice — see
 
 ---
 
+## Scenario A2 — Backend development without authservice (no DB credentials needed)
+
+Run mailservice, regionservice, routerservice, searchservice, and tilesservice locally
+while keeping authservice on the remote dev server. No PostgreSQL credentials required —
+all local services validate JWTs against the remote authservice.
+
+### Service dependency table
+
+| Service | Calls locally | Calls remotely |
+|---------|---------------|----------------|
+| mailservice | — | authservice `<DEV_IP>:34101` |
+| regionservice | — (geodata files) | — |
+| routerservice | regionservice :8085 | authservice `<DEV_IP>:34101`, Valhalla, Pelias |
+| searchservice | regionservice :8085 | authservice `<DEV_IP>:34101`, Pelias |
+| tilesservice | — (MBTiles files) | authservice `<DEV_IP>:34101` |
+
+### Syncing data files
+
+Same as Scenario A — download from **https://geodata.hevanto-it.com** (request credentials
+from the team).
+
+### Service setup
+
+**mailservice**
+
+```env
+HTTP_PORT=8082
+GRPC_PORT=8083
+AUTHSERVICE_HOST=<DEV_IP>
+AUTHSERVICE_GRPC_PORT=34101
+SMTP_HOST=<your SMTP host>
+SMTP_PORT=587
+SMTP_USER=<smtp user>
+SMTP_PASSWORD=<smtp password>
+```
+
+**regionservice**
+
+```env
+HTTP_PORT=8084
+GRPC_PORT=8085
+GEODATA_DIR=/home/<user>/dev/swayrider/localdata/geodata
+```
+
+**routerservice**
+
+```env
+HTTP_PORT=8086
+GRPC_PORT=8087
+AUTHSERVICE_HOST=<DEV_IP>
+AUTHSERVICE_PORT=34101
+REGIONSERVICE_HOST=localhost
+REGIONSERVICE_PORT=8085
+# Use per-region host/port form — check infra/dev-mini/layer-10/.env for active regions
+VALHALLA_REGION_HOSTS=<region1>:<DEV_IP>,<region2>:<DEV_IP>
+VALHALLA_REGION_PORTS=<region1>:33001,<region2>:33002
+PELIAS_API_REGION_HOSTS=<region1>:<DEV_IP>,<region2>:<DEV_IP>
+PELIAS_API_REGION_PORTS=<region1>:33111,<region2>:33121
+```
+
+**searchservice**
+
+```env
+HTTP_PORT=8088
+GRPC_PORT=8089
+AUTHSERVICE_HOST=<DEV_IP>
+AUTHSERVICE_PORT=34101
+REGIONSERVICE_HOST=localhost
+REGIONSERVICE_PORT=8085
+# Format: region=http://host:port/v1 — check infra/dev-mini/layer-10/.env for active regions
+PELIAS_REGIONS=<region1>=http://<DEV_IP>:33111/v1,<region2>=http://<DEV_IP>:33121/v1
+```
+
+**tilesservice**
+
+```env
+HTTP_PORT=8090
+AUTHSERVICE_HOST=<DEV_IP>
+AUTHSERVICE_PORT=34101
+TILES_PATH=/home/<user>/dev/swayrider/localdata/tiles
+SERVICE_HOST=http://localhost
+SERVICE_PORT=8090
+SERVICE_PREFIX=/v1/tiles
+```
+
+### Running all services
+
+```bash
+cd mailservice   && go run ./cmd/mailservice   &
+cd regionservice && go run ./cmd/regionservice &
+cd routerservice && go run ./cmd/routerservice &
+cd searchservice && go run ./cmd/searchservice &
+cd tilesservice  && go run ./cmd/tilesservice  &
+```
+
+### Optional: also run swayrider-api locally
+
+```env
+AUTHSERVICE_HOST=<DEV_IP>
+AUTHSERVICE_PORT=34101
+ROUTERSERVICE_HOST=localhost
+ROUTERSERVICE_PORT=8087
+SEARCHSERVICE_HOST=localhost
+SEARCHSERVICE_PORT=8089
+REGIONSERVICE_HOST=localhost
+REGIONSERVICE_PORT=8085
+TILESSERVICE_HOST=localhost
+TILESSERVICE_PORT=8090
+REDIS_HOST=<DEV_IP>
+REDIS_PORT=36379
+SWAYRIDER_API_CLIENT_ID=<from registration — see Scenario B>
+SWAYRIDER_API_CLIENT_SECRET=<from registration — see Scenario B>
+```
+
+---
+
 ## Scenario B — API gateway development (swayrider-api local only)
 
 Run only swayrider-api locally. All layer-20 services stay on the dev server.
