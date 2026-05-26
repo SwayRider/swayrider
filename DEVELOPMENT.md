@@ -192,11 +192,10 @@ AUTHSERVICE_HOST=localhost
 AUTHSERVICE_PORT=8081
 REGIONSERVICE_HOST=localhost
 REGIONSERVICE_PORT=8085
-# Use per-region host/port form — check infra/dev-mini/layer-10/.env for active regions
-VALHALLA_REGION_HOSTS=<region1>:<DEV_IP>,<region2>:<DEV_IP>
-VALHALLA_REGION_PORTS=<region1>:33001,<region2>:33002
-PELIAS_API_REGION_HOSTS=<region1>:<DEV_IP>,<region2>:<DEV_IP>
-PELIAS_API_REGION_PORTS=<region1>:33111,<region2>:33121
+VALHALLA_REGION_HOSTS=benelux:<DEV_IP>,france:<DEV_IP>,germany:<DEV_IP>
+VALHALLA_REGION_PORTS=benelux:33001,france:33002,germany:33003
+PELIAS_API_REGION_HOSTS=benelux:<DEV_IP>,france:<DEV_IP>,germany:<DEV_IP>
+PELIAS_API_REGION_PORTS=benelux:33111,france:33121,germany:33131
 ```
 
 **searchservice**
@@ -208,8 +207,7 @@ AUTHSERVICE_HOST=localhost
 AUTHSERVICE_PORT=8081
 REGIONSERVICE_HOST=localhost
 REGIONSERVICE_PORT=8085
-# Format: region=http://host:port/v1 — check infra/dev-mini/layer-10/.env for active regions
-PELIAS_REGIONS=<region1>=http://<DEV_IP>:33111/v1,<region2>=http://<DEV_IP>:33121/v1
+PELIAS_REGIONS=benelux=http://<DEV_IP>:33111/v1,france=http://<DEV_IP>:33121/v1,germany=http://<DEV_IP>:33131/v1
 ```
 
 **tilesservice**
@@ -322,11 +320,10 @@ AUTHSERVICE_HOST=<DEV_IP>
 AUTHSERVICE_PORT=34101
 REGIONSERVICE_HOST=localhost
 REGIONSERVICE_PORT=8085
-# Use per-region host/port form — check infra/dev-mini/layer-10/.env for active regions
-VALHALLA_REGION_HOSTS=<region1>:<DEV_IP>,<region2>:<DEV_IP>
-VALHALLA_REGION_PORTS=<region1>:33001,<region2>:33002
-PELIAS_API_REGION_HOSTS=<region1>:<DEV_IP>,<region2>:<DEV_IP>
-PELIAS_API_REGION_PORTS=<region1>:33111,<region2>:33121
+VALHALLA_REGION_HOSTS=benelux:<DEV_IP>,france:<DEV_IP>,germany:<DEV_IP>
+VALHALLA_REGION_PORTS=benelux:33001,france:33002,germany:33003
+PELIAS_API_REGION_HOSTS=benelux:<DEV_IP>,france:<DEV_IP>,germany:<DEV_IP>
+PELIAS_API_REGION_PORTS=benelux:33111,france:33121,germany:33131
 ```
 
 **searchservice**
@@ -338,8 +335,7 @@ AUTHSERVICE_HOST=<DEV_IP>
 AUTHSERVICE_PORT=34101
 REGIONSERVICE_HOST=localhost
 REGIONSERVICE_PORT=8085
-# Format: region=http://host:port/v1 — check infra/dev-mini/layer-10/.env for active regions
-PELIAS_REGIONS=<region1>=http://<DEV_IP>:33111/v1,<region2>=http://<DEV_IP>:33121/v1
+PELIAS_REGIONS=benelux=http://<DEV_IP>:33111/v1,france=http://<DEV_IP>:33121/v1,germany=http://<DEV_IP>:33131/v1
 ```
 
 **tilesservice**
