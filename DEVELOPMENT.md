@@ -121,6 +121,24 @@ regionservice and tilesservice need local copies of server data. Data can be dow
 from **https://geodata.hevanto-it.com** — request login credentials from the team before
 your first download.
 
+**regionservice** — download `border.tar.bz2` and extract into `localdata/geodata`:
+
+```bash
+mkdir -p ~/Dev/SwayRider/localdata/geodata
+tar -xjf border.tar.bz2 -C ~/Dev/SwayRider/localdata/geodata
+```
+
+This produces `manifest.yml`, `contours/`, and `border-crossings/` under `localdata/geodata`.
+
+**tilesservice** — download `tiles.tar` and extract into `localdata/tiles`:
+
+```bash
+mkdir -p ~/Dev/SwayRider/localdata/tiles
+tar -xf tiles.tar -C ~/Dev/SwayRider/localdata/tiles
+```
+
+This produces `L0.mbtiles`, `L1/`, and `L2/` under `localdata/tiles`.
+
 ### Service setup
 
 For each service: copy `env.example` to `.env`, then set the values below.
@@ -270,8 +288,7 @@ all local services validate JWTs against the remote authservice.
 
 ### Syncing data files
 
-Same as Scenario A — download from **https://geodata.hevanto-it.com** (request credentials
-from the team).
+Same as Scenario A — see [above](#syncing-data-files) for archive names and extraction commands.
 
 ### Service setup
 
