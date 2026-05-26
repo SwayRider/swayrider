@@ -294,7 +294,7 @@ Pelias API `33111–33181`, Pelias Placeholder `33100`.
 > **Before starting layer-20**, the data pipeline must have run and its output deployed to the
 > server data paths. See [DATAPIPELINE.md](DATAPIPELINE.md) for the full procedure.
 
-Services: swayrider-api (API gateway), authservice, mailservice, regionservice, routerservice, searchservice, tilesservice.
+Services: authservice, mailservice, regionservice, routerservice, searchservice, tilesservice.
 
 ```bash
 cd ~/Dev/swayrider-public/infra/dev/layer-20
@@ -325,7 +325,6 @@ Exposed ports:
 
 | Service | HTTP | gRPC |
 |---|---|---|
-| swayrider-api | 34000 | — |
 | authservice | 34001 | 34101 |
 | mailservice | 34002 | 34102 |
 | regionservice | 34003 | 34103 |
@@ -333,7 +332,41 @@ Exposed ports:
 | searchservice | 34006 | 34106 |
 | tilesservice | 34005 | — |
 
-`swayrider-api` is also reachable via Traefik at `api.<DEV_DOMAIN>` (port 30080/30443) — it is the only service attached to the Traefik-facing network.
+### Layer 30 — Public gateway
+
+Services: **swayrider-api**
+
+> **Before starting layer-30**, layer-20 must be up and the `swayrider-api-register`
+> init job must have completed. That job registers API credentials and writes them to
+> the `sw-dev-api-credentials` Docker volume that layer-30 mounts read-only.
+
+```bash
+cd ~/Dev/swayrider-public/infra/dev-mini/layer-30
+cp env.example .env
+# Edit .env — set domain and CORS origins
+docker compose -f compose.yml up -d
+```
+
+Key variables in `layer-30/.env`:
+
+```env
+DEV_DOMAIN=<must match layer-00>
+CORS_ALLOWED_ORIGINS=http://localhost:5173
+
+ROUTE_WORKER_COUNT=5
+SEARCH_WORKER_COUNT=10
+QUEUE_MAX_DEPTH=500
+RESULT_TTL_SECONDS=300
+
+RATE_LIMIT_IP_AUTH=10
+RATE_LIMIT_IP_PUBLIC=600
+RATE_LIMIT_USER_API=300
+RATE_LIMIT_USER_EXPENSIVE=20
+```
+
+Exposed ports: `swayrider-api` direct access `34000`. Also reachable via Traefik at
+`api.<DEV_DOMAIN>` (port 30080/30443) — it is the only service attached to the
+Traefik-facing network.
 
 ---
 
