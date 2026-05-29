@@ -93,7 +93,7 @@ non-conflicting local assignments (override `HTTP_PORT`/`GRPC_PORT` in each `.en
 | routerservice | 8086 | 8087 | — |
 | searchservice | 8088 | 8089 | — |
 | tilesservice | 8090 | — | — |
-| swayrider-api | 8080 | — | — |
+| swayrider-api | 8888 | — | — |
 
 swayrider-api is never run alongside layer-20 on the same machine, so it reuses 8080.
 
