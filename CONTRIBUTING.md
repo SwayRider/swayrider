@@ -24,7 +24,9 @@ Before your contribution can be accepted, you must accept the applicable CLA:
 - Individual Contributor License Agreement (ICLA)
 - Corporate Contributor License Agreement (CCLA), if contributing on behalf of a company
 
-Acceptance is handled automatically via the CLA Assistant GitHub workflow.
+Acceptance of the **ICLA** is handled automatically via the CLA Assistant GitHub workflow.
+
+Acceptance of the **CCLA** is a manual procedure. Please send a request to **maarten(at)hevanto(dot)be** to receive a copy of the **CCLA** and return a signed copy.
 
 ### 3.2 CLA Scope
 
