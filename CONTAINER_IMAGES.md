@@ -1,8 +1,15 @@
 # Container Images
 
 SwayRider service images are published to the GitHub Container Registry at
-`ghcr.io/swayrider/<service>`. The layer-20 Docker Compose file pulls the `latest` tag for
-each service.
+`ghcr.io/swayrider/<service>`. The layer-20 Docker Compose files currently pull
+the `latest` tag for each service (`infra/dev/layer-20`) or a pinned version
+tag (`infra/dev-mini/layer-20`, for reproducible mini-deployments);
+`dev-latest` exists as a commented-out alternative but is not active by
+default.
+
+Every service ships a `Makefile` with a `container-build` target that builds
+both `linux/amd64` and `linux/arm64` and pushes the result. The image tag is
+derived from the git state of the service's checkout.
 
 ---
 
@@ -61,65 +68,68 @@ docker buildx create --use --name multiplatform --driver docker-container
 
 This only needs to be done once per machine.
 
-### Services with a Makefile (`authservice`, `mailservice`)
+### From a service directory
 
-The Makefile derives the image tag from the current branch and the `.version` file:
-
-| Branch | Tags applied |
-|---|---|
-| `main` | `v{version}`, `latest` |
-| `dev` | `v{version}-{date}-dev`, `dev-latest` |
-| `test` | `v{version}-{date}-test`, `test-latest` |
-| other | `v{version}-{date}-{branch}` |
-
-Build and push from the service directory:
+Each service repo (`authservice`, `mailservice`, `regionservice`, `routerservice`,
+`searchservice`, `swayrider-api`, `swctl`, `tilesservice`) has its own `Makefile`:
 
 ```bash
-cd ~/Dev/swayrider-public/authservice
+cd <service>
 make container-build
 ```
 
-The Makefile builds from the workspace root (`../../`) so that the Go workspace and all
-sibling modules are available to the build context.
+Each service's Dockerfile uses the service directory as its build context and relies solely
+on `go mod download` — no workspace or sibling modules. The `go.work` file is for local
+development only.
 
-To release a new version, bump `.version` first, then run `make container-build` on `main`:
+### Building all services at once
+
+The workspace root has a convenience script that builds every service (with
+`FORCE_DEV_LATEST=1`):
 
 ```bash
-echo "1.2.3" > .version
-git add .version && git commit -m "Release v1.2.3"
-git push origin main
-make container-build
+./containerbuild.sh
 ```
 
-### Services without a Makefile
+---
 
-`regionservice`, `routerservice`, `searchservice`, `tilesservice`, and `swctl` do not have
-Makefiles. Build and push manually from the workspace root so all Go modules are in the build
-context:
+## Tag scheme
+
+The Makefile derives tags from the git state of the checkout:
+
+| Branch / state | Tags applied |
+|----------------|--------------|
+| Version-tagged commit (`v1.2.3`) | `v1.2.3`, `latest` |
+| `main` (untagged) | `v{last}-{date}-dev-b{N}`, `dev-latest` |
+| Other branch | `v{last}-{branch}-b{N}` |
+| Detached HEAD | `v{last}-{sha}-b{N}` |
+
+- **Release builds** (version tag on HEAD) are immutable: exactly `v1.2.3` + `latest`.
+- **Non-release builds** get an incrementing build number (`-b{N}`) so repeated builds of the
+  same branch don't overwrite each other. The number is computed by querying the registry
+  (`tags/list`) for the highest existing `-b{N}` tag on the same base tag and adding 1. The
+  build fails with a clear error if the registry can't be reached.
+- `dev-latest` / `latest` are floating tags that point at the most recent build in their
+  class; the pinned `-b{N}` tags preserve every build for rollback and comparison.
+
+### FORCE_DEV_LATEST
+
+By default, a release build on a version-tagged commit pushes `v1.2.3` and `latest`. Set
+`FORCE_DEV_LATEST=1` to additionally push the `dev-latest` floating tag:
 
 ```bash
-cd ~/Dev/swayrider-public
-
-SERVICE=regionservice   # change as needed
-VERSION=0.1.0
-
-docker buildx build \
-  -f $SERVICE/Dockerfile \
-  --platform linux/amd64,linux/arm64 \
-  -t ghcr.io/swayrider/$SERVICE:v$VERSION \
-  -t ghcr.io/swayrider/$SERVICE:latest \
-  --push .
+FORCE_DEV_LATEST=1 make container-build
 ```
 
-Replace `SERVICE` and `VERSION` for each service you are releasing.
+Use this when a release should also advance environments that track `dev-latest`.
 
-### swayrider-api
+### Releasing a new version
 
-`swayrider-api` builds like any other service — from its own directory using `go mod download`:
+Tag the commit with a `vX.Y.Z` tag and build on that commit:
 
 ```bash
-cd ~/Dev/swayrider-public/swayrider-api
-make container-build
+git tag v1.2.3
+make container-build        # pushes v1.2.3 + latest
 ```
 
 ---
@@ -135,8 +145,10 @@ make container-build
 | routerservice | `ghcr.io/swayrider/routerservice` | `latest` |
 | searchservice | `ghcr.io/swayrider/searchservice` | `latest` |
 | tilesservice | `ghcr.io/swayrider/tilesservice` | `latest` |
+| swctl | `ghcr.io/swayrider/swctl` | pinned version tag (init job only) |
 
-`swctl` is a CLI tool and is not used in the Compose stack.
+`swctl`'s image is not run as a long-lived service, but is used as the one-shot
+`swayrider-api-register` init-job container in `infra/dev-mini/layer-20/compose.yml`.
 
 ---
 
