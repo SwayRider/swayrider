@@ -46,7 +46,7 @@ Config files live in `data-pipeline/config/`. The default is `config/config.yml`
 accept `--config` to point at an alternate file:
 
 ```bash
-./build-osm --config config/config-custom.yml --tag 2026-04-23
+./prepare-source-data --config config/config-custom.yml --tag 2026-04-23
 ```
 
 **Before running the pipeline, edit `config.yml` and set the following paths** — they ship
@@ -64,26 +64,17 @@ binaries in `tools_dir`. Subsequent runs reuse them.
 ### Minimal / test builds
 
 A full Europe build takes many hours and ~1.5 TB. To test the pipeline with a smaller
-dataset, copy `config.yml` and delete all but the regions you need:
+dataset, use the repo's ready-made minimal config (benelux/france/germany only) instead of
+hand-rolling a copy:
+
+Run all scripts with `--config config/config-mini.yml`:
 
 ```bash
-cp config/config.yml config/config-test.yml
-# Edit config-test.yml: remove unwanted entries from the `regions` and `border-regions` sections
-```
-
-Example: keeping only `west-europe` and `iberian-peninsula` reduces the build to two regions
-and their shared border. Delete every other entry under `regions:` and remove all
-`border-regions:` entries that reference other regions (keep only
-`iberian-peninsula_west-europe`).
-
-Then run all scripts with `--config config/config-test.yml`:
-
-```bash
-./build-osm           --config config/config-test.yml --tag test-2026-04-23
-./build-border-data   --config config/config-test.yml --tag test-2026-04-23
-./build-valhalla-data --config config/config-test.yml --tag test-2026-04-23
-./build-pelias-data   --config config/config-test.yml --tag test-2026-04-23
-./build-tiles         --config config/config-test.yml --tag test-2026-04-23
+./prepare-source-data --config config/config-mini.yml --tag test-2026-04-23
+./build-border-data   --config config/config-mini.yml --tag test-2026-04-23
+./build-valhalla-data --config config/config-mini.yml --tag test-2026-04-23
+./build-pelias-data   --config config/config-mini.yml --tag test-2026-04-23
+./build-tiles         --config config/config-mini.yml --tag test-2026-04-23
 ```
 
 The layer-10 and layer-20 Docker Compose files do not need changes — services for regions
@@ -99,7 +90,7 @@ files so they can run and be re-run independently.
 
 | Pipeline | Script | Manifest | Output archive |
 |---|---|---|---|
-| OSM data | `./build-osm` | `manifest-osm.yml` | `osm.tar.bz2` |
+| OSM data | `./prepare-source-data` | `manifest-osm.yml` | `osm.tar.bz2` |
 | Border data | `./build-border-data` | `manifest-border.yml` | `border.tar.bz2` |
 | Valhalla routing data | `./build-valhalla-data` | `manifest-valhalla.yml` | `valhalla.tar.bz2` |
 | Pelias geocoding data | `./build-pelias-data` | `manifest-pelias.yml` | `pelias-data.tar.bz2` + `pelias-es-snapshot.tar.bz2` |
@@ -108,15 +99,15 @@ files so they can run and be re-run independently.
 ### Dependencies
 
 ```
-build-osm  ──┬──▶  build-border-data
-             ├──▶  build-valhalla-data
-             └──▶  build-pelias-data
+prepare-source-data  ──┬──▶  build-border-data
+                        ├──▶  build-valhalla-data
+                        └──▶  build-pelias-data
 
 build-tiles  (independent — runs in parallel or separately)
 ```
 
 `build-border-data`, `build-valhalla-data`, and `build-pelias-data` verify that the required
-OSM output files from `build-osm` are present before starting.
+OSM output files from `prepare-source-data` are present before starting.
 
 ---
 
@@ -131,7 +122,7 @@ cd ~/Dev/swayrider-public/data-pipeline
 source .venv/bin/activate
 
 # Step 1 — always first
-./build-osm --config config/config.yml --tag 2026-04-23
+./prepare-source-data --config config/config.yml --tag 2026-04-23
 
 # Step 2 — these three can run in parallel or in any order
 ./build-border-data   --config config/config.yml --tag 2026-04-23
@@ -152,12 +143,8 @@ on re-runs. To force a full rebuild of a pipeline, pass `--clean`.
 After a pipeline completes, publish its output to `geodata_dir` (configured in `config.yml`):
 
 ```bash
-# Publish each pipeline's output (run after each script, or all at the end)
-./publish --config config/config.yml --manifest manifest-osm.yml
-./publish --config config/config.yml --manifest manifest-border.yml
-./publish --config config/config.yml --manifest manifest-valhalla.yml
-./publish --config config/config.yml --manifest manifest-pelias.yml
-./publish --config config/config.yml --manifest manifest-tiles.yml
+# Publish every completed pipeline's output in one call
+./publish --config config/config.yml
 ```
 
 The published layout under `geodata_dir`:

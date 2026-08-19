@@ -12,16 +12,21 @@ backed by Valhalla (routing), Pelias (geocoding), and PostgreSQL.
 | [SwayRider/grpcclients](https://github.com/SwayRider/grpcclients) | Go | gRPC client wrappers |
 | [SwayRider/swlib](https://github.com/SwayRider/swlib) | Go | Shared library (app bootstrap, auth, logging) |
 | [SwayRider/swayrider-api](https://github.com/SwayRider/swayrider-api) | Go | API gateway — JWT validation, rate limiting, queue |
+| [SwayRider/swayrider-api](https://github.com/SwayRider/swayrider-api) | Go | API gateway (sole external entry point) |
 | [SwayRider/authservice](https://github.com/SwayRider/authservice) | Go | User auth & JWT |
 | [SwayRider/mailservice](https://github.com/SwayRider/mailservice) | Go | Transactional email |
 | [SwayRider/regionservice](https://github.com/SwayRider/regionservice) | Go | Geographic region queries |
 | [SwayRider/routerservice](https://github.com/SwayRider/routerservice) | Go | Multi-modal routing |
 | [SwayRider/searchservice](https://github.com/SwayRider/searchservice) | Go | Geocoding / search |
 | [SwayRider/tilesservice](https://github.com/SwayRider/tilesservice) | Go | Vector tile serving |
+| [SwayRider/swlib](https://github.com/SwayRider/swlib) | Go | Shared library used by every service |
+| [SwayRider/grpcclients](https://github.com/SwayRider/grpcclients) | Go | gRPC client wrappers per service |
+| [SwayRider/protos](https://github.com/SwayRider/protos) | Protocol Buffers | Proto definitions and generated Go code |
 | [SwayRider/swctl](https://github.com/SwayRider/swctl) | Go | Management CLI |
-| [SwayRider/mobile](https://github.com/SwayRider/mobile) | Kotlin / Android | Android app |
+| [SwayRider/swayriderapp](https://github.com/SwayRider/swayriderapp) | Dart / Flutter | Mobile app |
 | [SwayRider/data-pipeline](https://github.com/SwayRider/data-pipeline) | Python | OSM tile data pipeline |
 | [SwayRider/infra](https://github.com/SwayRider/infra) | — | Docker Compose, deploy scripts |
+| [SwayRider/testing](https://github.com/SwayRider/testing) | — | Bruno API test collections |
 
 ---
 
@@ -51,14 +56,14 @@ For other distros:
 
 ### Go
 
-Install Go ≥ 1.25.1. The recommended approach is snap or direct from <https://go.dev/dl/>:
+Install Go ≥ 1.26.2 (the workspace currently pins `go 1.26.4` in `go.work`). The recommended approach is snap or direct from <https://go.dev/dl/>:
 
 ```bash
 # snap (recommended)
 sudo snap install go --classic
 
 # Direct install
-curl -L https://go.dev/dl/go1.25.1.linux-amd64.tar.gz | sudo tar -C /usr/local -xz
+curl -L https://go.dev/dl/go1.26.4.linux-amd64.tar.gz | sudo tar -C /usr/local -xz
 export PATH=$PATH:/usr/local/go/bin  # add to ~/.profile
 ```
 
@@ -95,11 +100,9 @@ Python ≥ 3.12 is required for the data pipeline. Use [pyenv](https://github.co
 or your distro's package manager. The pipeline also requires `tippecanoe` for tile generation
 and `osmium-tool` for OSM data extraction — both are **server-side only**.
 
-### Android (mobile only)
+### Flutter (mobile only)
 
-- Android Studio (latest)
-- JDK 17
-- Android SDK: `compileSdk 36`, `minSdk 26`
+The mobile client (`swayriderapp`) is a Flutter app — see its own README/DEVELOPMENT.md for the Flutter/Dart SDK versions and setup instructions.
 
 ---
 
@@ -129,7 +132,7 @@ git clone git@github.com:SwayRider/swctl.git
 git clone git@github.com:SwayRider/infra.git
 
 # Optional
-git clone git@github.com:SwayRider/mobile.git
+git clone git@github.com:SwayRider/swayriderapp.git
 git clone git@github.com:SwayRider/data-pipeline.git
 ```
 
@@ -210,14 +213,14 @@ cd ~/Dev/swayrider-public/swlib && go test ./...
 ## Setting Up the Dev Server
 
 The dev server runs all shared infrastructure and SwayRider services in Docker. The
-`infra` repo contains three layered Compose configurations that must be started in order.
+`infra` repo contains four layered Compose configurations that must be started in order.
 
 ### Layer 00 — Base infrastructure
 
-Services: **Traefik**, **PostgreSQL**, **MinIO**, **Elasticsearch**
+Services: **Traefik**, **PostgreSQL**, **Redis**, **Elasticsearch**, **WireGuard**
 
 ```bash
-cd ~/Dev/swayrider-public/infra/dev/layer-00
+cd ~/Dev/swayrider-public/infra/dev-mini/layer-00
 cp env.example .env
 # Edit .env — set data paths for your server
 docker compose -f compose.yaml up -d
@@ -235,8 +238,8 @@ POSTGRES_PASSWORD=<choose a password>
 POSTGRES_DB=swayriderdb
 ```
 
-Exposed ports: PostgreSQL `35432`, Elasticsearch `39200`, MinIO `39000/39001`,
-Traefik `30080/30443` (HTTP/HTTPS), `38080` (dashboard).
+Exposed ports: PostgreSQL `35432`, Elasticsearch `39200/39300`, Redis `36379`,
+Traefik `30080/30443` (HTTP/HTTPS), `38080` (dashboard), WireGuard `51820/udp` (or `WG_UDP_PORT`).
 
 ### Database migrations
 
@@ -271,7 +274,7 @@ Services: **Valhalla** (8 routing regions), **Pelias** (geocoding)
 > the data paths (see [Data Pipeline](#data-pipeline) below).
 
 ```bash
-cd ~/Dev/swayrider-public/infra/dev/layer-10
+cd ~/Dev/swayrider-public/infra/dev-mini/layer-10
 cp env.example .env
 # Edit .env — set data paths and thread count
 docker compose -f compose.yaml up -d
@@ -297,7 +300,7 @@ Pelias API `33111–33181`, Pelias Placeholder `33100`.
 Services: authservice, mailservice, regionservice, routerservice, searchservice, tilesservice.
 
 ```bash
-cd ~/Dev/swayrider-public/infra/dev/layer-20
+cd ~/Dev/swayrider-public/infra/dev-mini/layer-20
 cp env.example .env
 # Edit .env — see below
 docker compose -f compose.yml up -d
@@ -410,11 +413,10 @@ pip install -r requirements.txt
 ### Running the tile pipeline
 
 ```bash
-python pipeline/tiles.py
+./build-tiles --config config/config.yml --tag <TAG>
 ```
 
-Existing outputs are skipped automatically. To force a full rebuild, delete the `.mbtiles`
-files in the output directory first.
+Each pipeline run is incremental — completed steps are recorded in the manifest and skipped on re-run. Pass `--clean` to force a full rebuild.
 
 ### Deployment scripts
 
@@ -427,23 +429,24 @@ cd ~/Dev/swayrider-public/infra/dev/scripts
 ./deploy-pelias.sh     # Pelias geocoding data only
 ./deploy-tiles.sh      # MBTiles for tilesservice only
 ./deploy-osm.sh        # base OSM extract only
+./deploy-border.sh     # Border crossing data only
 ```
 
 ---
 
-## Android / Mobile
+## Mobile (Flutter)
 
-Requirements: Android Studio (latest), JDK 17, Android SDK (compileSdk 36, minSdk 26).
+The mobile client (`swayriderapp`) is a Flutter app, not the Kotlin/Jetpack Compose
+Android prototype it originally started as.
 
 ```bash
-cd ~/Dev/swayrider-public/mobile
-./gradlew assembleDebug    # debug APK — connects to dev server directly
-./gradlew assembleAlpha    # alpha APK — connects to dev server via HTTPS
-./gradlew assembleRelease  # release APK — production endpoints
+cd ~/Dev/swayrider-public/swayriderapp
+flutter run   # defaults to main_development.dart, wired against the dev AuthService
 ```
 
-See the [mobile repo](https://github.com/SwayRider/mobile) README for build variant details
-and how to configure the dev server endpoint.
+See the [swayriderapp repo](https://github.com/SwayRider/swayriderapp) README and
+`DEVELOPMENT.md` for the Flutter/Dart SDK versions, build flavors, and how to point
+it at the dev server.
 
 ---
 
