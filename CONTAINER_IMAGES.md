@@ -84,11 +84,11 @@ development only.
 
 ### Building all services at once
 
-The workspace root has a convenience script that builds every service (with
-`FORCE_DEV_LATEST=1`):
+`tools/containerbuild.py` builds every service in one pass (see `--help` for
+`--dry-run`, `--show`, `--no-push`, `--services`, and `--dev-latest`):
 
 ```bash
-./containerbuild.sh
+tools/containerbuild.py
 ```
 
 ---
@@ -114,14 +114,16 @@ The Makefile derives tags from the git state of the checkout:
 
 ### FORCE_DEV_LATEST
 
-By default, a release build on a version-tagged commit pushes `v1.2.3` and `latest`. Set
-`FORCE_DEV_LATEST=1` to additionally push the `dev-latest` floating tag:
+Only `main` (untagged HEAD) pushes `dev-latest` automatically. Set `FORCE_DEV_LATEST=1` to
+also push `dev-latest` from a release build (a version-tagged commit) or from any other
+branch:
 
 ```bash
 FORCE_DEV_LATEST=1 make container-build
 ```
 
-Use this when a release should also advance environments that track `dev-latest`.
+Or, across all services at once, `tools/containerbuild.py --dev-latest`. Use this when a
+release — or a branch build — should also advance environments that track `dev-latest`.
 
 ### Releasing a new version
 
