@@ -139,6 +139,8 @@ tar -xf tiles.tar -C ~/Dev/SwayRider/localdata/tiles
 
 This produces `L0.mbtiles`, `L1/`, and `L2/` under `localdata/tiles`.
 
+> **Migration note:** the tiles archive is the legacy MBTiles output of the deprecated `data-pipeline`. After tilesservice moves to PMTiles, `localdata/tiles` holds a release directory (`tiles.pmtiles`, `manifest.json`, `styles/`, `glyphs/`, `sprites/`) instead. See [MIGRATION-DATA-MANAGER.md](../Docs/MIGRATION-DATA-MANAGER.md).
+
 ### Service setup
 
 For each service: copy `env.example` to `.env`, then set the values below.

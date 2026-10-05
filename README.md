@@ -24,7 +24,8 @@ backed by Valhalla (routing), Pelias (geocoding), and PostgreSQL.
 | [SwayRider/protos](https://github.com/SwayRider/protos) | Protocol Buffers | Proto definitions and generated Go code |
 | [SwayRider/swctl](https://github.com/SwayRider/swctl) | Go | Management CLI |
 | [SwayRider/swayriderapp](https://github.com/SwayRider/swayriderapp) | Dart / Flutter | Mobile app |
-| [SwayRider/data-pipeline](https://github.com/SwayRider/data-pipeline) | Python | OSM tile data pipeline |
+| [SwayRider/data-pipeline](https://github.com/SwayRider/data-pipeline) | Python | **Deprecated** OSM tile data pipeline (replaced by `data-manager`) |
+| `data-manager` | Python (Flask + RQ) | Geodata build and release tool (replaces data-pipeline) |
 | [SwayRider/infra](https://github.com/SwayRider/infra) | — | Docker Compose, deploy scripts |
 | [SwayRider/testing](https://github.com/SwayRider/testing) | — | Bruno API test collections |
 
@@ -94,11 +95,12 @@ Or use the shortcut from the `infra` repo (also fetches googleapis):
 cd ~/Dev/swayrider-public/infra && make install-deps
 ```
 
-### Python (data pipeline only)
+### Python (data-manager only)
 
-Python ≥ 3.12 is required for the data pipeline. Use [pyenv](https://github.com/pyenv/pyenv)
-or your distro's package manager. The pipeline also requires `tippecanoe` for tile generation
-and `osmium-tool` for OSM data extraction — both are **server-side only**.
+Python ≥ 3.12 is required for `data-manager`. Use [pyenv](https://github.com/pyenv/pyenv)
+or your distro's package manager. It also needs `osmium-tool`, GDAL, Docker (Pelias) and the
+`pmtiles` CLI — all **build-host only** (see `data-manager/CLAUDE.md`, Settings → Tools).
+`tippecanoe` is only needed by the deprecated `data-pipeline`.
 
 ### Flutter (mobile only)
 
@@ -294,8 +296,9 @@ Pelias API `33111–33181`, Pelias Placeholder `33100`.
 
 ### Layer 20 — SwayRider services
 
-> **Before starting layer-20**, the data pipeline must have run and its output deployed to the
-> server data paths. See [DATAPIPELINE.md](DATAPIPELINE.md) for the full procedure.
+> **Before starting layer-20**, data-manager output must be built and deployed (copied) to the
+> server data roots. See [MIGRATION-DATA-MANAGER.md](../Docs/MIGRATION-DATA-MANAGER.md) for the procedure
+> (legacy: [DATAPIPELINE.md](DATAPIPELINE.md), deprecated).
 
 Services: authservice, mailservice, regionservice, routerservice, searchservice, tilesservice.
 
@@ -392,7 +395,13 @@ See the individual service repos for the exact environment variables.
 
 ---
 
-## Data Pipeline
+## Data Manager (replaces Data Pipeline)
+
+`data-manager` builds the geodata (OSM, border, Valhalla, Pelias incl. interpolation, styles) and downloads the Protomaps planet PMTiles. Releases are copied to the server and activated per artifact class. Full steps, folder structure and rollback: [`Docs/MIGRATION-DATA-MANAGER.md`](../Docs/MIGRATION-DATA-MANAGER.md).
+
+> **Everything below this point is the deprecated `data-pipeline` procedure**, kept until migration Phase G.
+
+### Legacy Data Pipeline
 
 > **Server only.** The pipeline is CPU- and disk-intensive. Do not run it on a developer
 > workstation.
@@ -465,4 +474,5 @@ for a complete list.
 
 **Layer-10 services crash immediately**
 The geospatial data paths (Valhalla tiles, Pelias index) must exist and be populated before
-starting layer-10. Run the data pipeline and deploy scripts first.
+starting layer-10. Build with `data-manager` and copy/activate the releases first (see
+[MIGRATION-DATA-MANAGER.md](../Docs/MIGRATION-DATA-MANAGER.md)); legacy: the data pipeline and `deploy-*.sh` scripts.

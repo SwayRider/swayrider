@@ -1,5 +1,7 @@
 # Data Pipeline
 
+> **⚠️ DEPRECATED** — Replaced by `data-manager`. See [`Docs/MIGRATION-DATA-MANAGER.md`](../Docs/MIGRATION-DATA-MANAGER.md). This file is removed in migration Phase G.
+
 > **Server only.** The pipeline is CPU- and disk-intensive. Do not run it on a developer
 > workstation. A full Europe build requires approximately **1.5 TB of free disk space** and
 > **64 GB of RAM**. This is best run on one or more dedicated servers.
